@@ -21,31 +21,15 @@ def isEmptyDir(path: Path|str)->bool:
     path = Path(path)
     return path.is_dir and not any(path.iterdir())
 
-
-
-class FileExtensions:
-
-    videoExtensions = [
-    ".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".mpeg", ".mpg", ".3gp", ".m4v"
-    ]
-    imageExtensions = [
-    ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".svg", ".webp", ".ico", ".heic"
-    ]
-    audioExtensions = [
-    ".mp3", ".wav", ".aac", ".flac", ".ogg", ".wma", ".m4a", ".alac"
-    ]
-    documentExtensions = [
-    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".rtf", ".odt", ".ods", ".odp"
-    ]   
-    archiveExtensions = [
-    ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz"
-    ]
-    codeExtensions = [
-    ".py", ".c", ".cpp", ".java", ".js", ".html", ".css", ".json", ".xml", ".sh", ".php", ".rb", ".go", ".rs"
-    ]
-    executableExtensions = [
-    ".exe", ".bat", ".cmd", ".msi", ".app", ".deb"
-    ]
+FILE_EXTENSIONS = {
+    "Videos": [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".mpeg", ".mpg", ".3gp", ".m4v"],
+    "Images": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".svg", ".webp", ".ico", ".heic"],
+    "Audio": [".mp3", ".wav", ".aac", ".flac", ".ogg", ".wma", ".m4a", ".alac"],
+    "Documents": [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".rtf", ".odt", ".ods", ".odp"],
+    "Archives": [".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz"],
+    "Code": [".py", ".c", ".cpp", ".java", ".js", ".html", ".css", ".json", ".xml", ".sh", ".php", ".rb", ".go", ".rs"],
+    "Executables":[".exe", ".bat", ".cmd", ".msi", ".app", ".deb"],
+}
 
 def list_dir(PATH: Path|str):
     try:
@@ -60,7 +44,6 @@ def list_dir(PATH: Path|str):
     except Exception as e:
         print(f"Error: {e}")
         return
-
 
 def make_dir(NAME: str, LOCATION: Path | str):
     try:
@@ -84,7 +67,7 @@ def init_file(NAME: Path | str, LOCATION: Path | str): #check file if it already
         stem = NAME.stem
         ext = NAME.suffix
 
-        if any(ext in group for group in [FileExtensions.codeExtensions, FileExtensions.documentExtensions]):
+        if any(ext in group for group in [FILE_EXTENSIONS["Code"], FILE_EXTENSIONS["Documents"]]):
             with open(DESTINATION, "w") as f:
                 f.write("")
             print(f"Successfully created \"{stem}\" in {DESTINATION}")
@@ -93,6 +76,10 @@ def init_file(NAME: Path | str, LOCATION: Path | str): #check file if it already
             print(f"Invalid file type. Only writable files are allowed")
             return
 
+    except FileNotFoundError:
+        raise FileNotFoundError("Location does not exist")
+    except IsADirectoryError:
+        raise IsADirectoryError("File is a directory")
     except Exception as e:
         print(f"Error occured with \"init\": {e}")
 
@@ -132,13 +119,79 @@ def remove(PATH: Path | str, IsRecursive: bool, IsForced: bool):
         print(f"Error occured while removing: {PATH}. {e}")
         return
 
-def organize(DIRECTORY: Path | str): #organize this
-    DIRECTORY = Path(DIRECTORY)
-    print(f"Organizing: {DIRECTORY}")
+def organize(DIRECTORY: Path | str):
+    try:
+        EXTENSION_MAP = {ext:category for category, extension in FILE_EXTENSIONS.items() for ext in extension}
+        DIRECTORY = Path(DIRECTORY)
+        Files = DIRECTORY.iterdir()
+    except FileNotFoundError:
+        print(f"Directory does not exist: {DIRECTORY}. {e}")
+        return
+    except Exception as e:
+        print(f"[SETUP ERROR]: {e}")
+        return
 
-def unorganize(DIRECTORY: Path | str): #unorganize this
+    for item in Files:
+
+        if not isValidFile(item):
+            print(f"Not a valid file; skipping...")
+            continue
+
+        try:
+            item = Path(item)
+            item_name = item.name
+            _, ext = item.stem, item.suffix
+
+            fileType = Path(EXTENSION_MAP[ext])
+            folderDestination = DIRECTORY / fileType
+            totalDestination = folderDestination / item_name
+        
+            folderDestination.mkdir(exist_ok=True)
+
+            shutil.move(str(item), str(totalDestination))
+
+        except Exception as e:
+            print(f"[FILE ERROR][MOVING ERROR]. {e}")
+
+        print(f"Successfully moved {item_name} to {totalDestination}")
+
+    print(f"Successfully organized: {DIRECTORY}")
+
+def unorganize(DIRECTORY: Path | str): #check for already-existing files
     DIRECTORY = Path(DIRECTORY)
-    print(f"Unorganizing: {DIRECTORY}")
+    if not isValidDir(DIRECTORY):
+        print(f"Directory does not exist")
+        return
+    
+    for dirname, _, filenames in os.walk(DIRECTORY, topdown=False):
+        dirname = Path(dirname)
+        for f in filenames:
+            try:
+                f = Path(f)
+                location = Path(dirname / f)
+                destination = Path(DIRECTORY / f)
+
+                if destination.exists(): #change name if it already exists somewhere
+                    pass
+
+                shutil.move(str(location), str(destination))
+
+            except FileNotFoundError:
+                raise FileNotFoundError("File does not exist")
+            except Exception as e:
+                print(f"Error occured while moving files. {e}")
+
+            print(f"Moved: {f} to {destination}")
+        
+        if Path(dirname) != DIRECTORY:
+            try:
+                dirname.rmdir()
+                print(f"Removed directory: {dirname}")
+            except Exception as e:
+                print(f"Error occured while removing empty folders. {e}")
+                return
+
+    print(f"Successfully unorganized: {DIRECTORY}")
 
 def find(DIRECTORY: Path|str, TYPE : str, NAME : str, SIZE : str): #find this
     DIRECTORY = Path(DIRECTORY)

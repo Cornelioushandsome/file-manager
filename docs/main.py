@@ -15,17 +15,32 @@ def save_cwd(DIRECTORY: Path|str):
     with CONFIG_PATH.open("w") as f:
         json.dump({"cwd": str(DIRECTORY.resolve())}, f)
 
-def change_directory(DIRECTORY: Path|str): #change so it gets relative path
-    target = Path(DIRECTORY).expanduser().resolve()
+def change_directory(DIRECTORY: Path|str):
+    # target = Path(DIRECTORY).expanduser().resolve().parent
+    if DIRECTORY == "..":
+        try:
+            target = Path(DIRECTORY).resolve().parent
+            print(f"Going to parent. Going to {target}")
+            os.chdir(target)
+            save_cwd(target)
+            return
+        except FileNotFoundError:
+            print(f"Directory has no existing parent")
+            return
+        except Exception as e:
+            print(f"Error occured while changing cwd to Parent. {e}")
+            return
+    
+    DIRECTORY = Path(DIRECTORY)
+    target = (get_cwd() / DIRECTORY).resolve()
+    if isValidDir(target):
+        print(f"Going to {target}")
+        os.chdir(target)
+        save_cwd(target)
+    else:
+        raise FileNotFoundError(f"Directory does not exist")
 
-    if not isValidDir(target):
-        print(f"Directory does not exist")
-        return
-
-    os.chdir(target)
-    save_cwd(target)
-    print(f"Changed current path to {target}")
-    print(f"Current path is now: {get_cwd()}")
+    return
 
 COMMANDS = {
         "ls": lambda args: list_dir(get_cwd()),

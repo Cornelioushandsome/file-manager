@@ -52,11 +52,11 @@ def argument_parser(parser):
 
     #org
     parser_org = subparsers.add_parser("org", help="Organize a directory by type")
-    parser_org.add_argument("DIRECTORY")
+    parser_org.add_argument("DIRECTORY", nargs="?" , default=get_cwd())
 
     #unorg
     parser_unorg = subparsers.add_parser("unorg", help="Unorganize a directory by type")
-    parser_unorg.add_argument("DIRECTORY")
+    parser_unorg.add_argument("DIRECTORY", nargs="?" , default=get_cwd())
 
     #find 
     parser_find = subparsers.add_parser("find", help="Find a file")
