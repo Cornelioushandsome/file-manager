@@ -8,14 +8,28 @@ from urllib.parse import *
 
 from commands import *
 from argparser import *
+import json
 #import colorama
 
+def save_cwd(DIRECTORY: Path|str):
+    with CONFIG_PATH.open("w") as f:
+        json.dump({"cwd": str(DIRECTORY.resolve())}, f)
 
-os.chdir(r"C:/Users/jackr/OneDrive/Desktop")
+def change_directory(DIRECTORY: Path|str): #change so it gets relative path
+    target = Path(DIRECTORY).expanduser().resolve()
+
+    if not isValidDir(target):
+        print(f"Directory does not exist")
+        return
+
+    os.chdir(target)
+    save_cwd(target)
+    print(f"Changed current path to {target}")
+    print(f"Current path is now: {get_cwd()}")
 
 COMMANDS = {
         "ls": lambda args: list_dir(get_cwd()),
-        "chdir": lambda args: change_dir(args.DIRECTORY),
+        "chdir": lambda args: change_directory(args.DIRECTORY),
         "mkdir": lambda args: make_dir(args.NAME, args.LOCATION),
         "init": lambda args: init_file(args.NAME, args.LOCATION),
         "rm": lambda args: remove(args.PATH, args.recursive, args.force),
@@ -45,6 +59,8 @@ def main():
 
 if __name__ == "__main__":
     START = time.perf_counter() 
+
     main()
+
     print(f"\n[Finished in {(time.perf_counter()-START):.5f}s]")
 

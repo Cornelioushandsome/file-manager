@@ -1,23 +1,23 @@
 from pathlib import Path
 import os
 import shutil
-from argparser import get_cwd
+#from argparser import get_cwd
 
-def _isValidFile(PATH: Path|str)->bool:
+def isValidFile(PATH: Path|str)->bool:
     PATH = Path(PATH)
     return PATH.exists() and PATH.is_file()
 
-def _isValidDir(PATH: Path|str)->bool:
+def isValidDir(PATH: Path|str)->bool:
     PATH = Path(PATH)
     return PATH.exists() and PATH.is_dir()
 
-def _count_files_dirs(path: Path | str):
+def count_files_dirs(path: Path | str):
     path = Path(path)
     files = [p for p in path.iterdir() if p.is_file()]
     dirs = [p for p in path.iterdir() if p.is_dir()]
     return len(files), len(dirs)
 
-def _isEmptyDir(path: Path|str)->bool:
+def isEmptyDir(path: Path|str)->bool:
     path = Path(path)
     return path.is_dir and not any(path.iterdir())
 
@@ -51,6 +51,8 @@ def list_dir(PATH: Path|str):
     try:
         PATH = Path(PATH)
         dirs = os.listdir(PATH)
+        print(f"[Listing all childs under: {PATH}]")
+
         for directory in dirs:
             print(f"[{directory}]", end=" ")
         print()
@@ -59,26 +61,6 @@ def list_dir(PATH: Path|str):
         print(f"Error: {e}")
         return
 
-def change_dir(DIRECTORY: Path|str): #FIX THIS
-    try:
-        try:
-            if DIRECTORY == "..":
-                parent = os.path.dirname(get_cwd())
-                os.chdir(Path(parent))
-                return
-            
-        except Exception as e:
-            print(f"Error occured with argument: \"..\". {e}")
-            return
-
-        DIRECTORY = Path(DIRECTORY)
-        print(f"Changing {os.getcwd()} to {DIRECTORY}")
-
-        os.chdir(DIRECTORY)
-
-    except Exception as e:
-        print(f"Error occured. {e}")
-        return
 
 def make_dir(NAME: str, LOCATION: Path | str):
     try:
@@ -117,16 +99,16 @@ def init_file(NAME: Path | str, LOCATION: Path | str): #check file if it already
 def remove(PATH: Path | str, IsRecursive: bool, IsForced: bool): 
     try:
         PATH = Path(PATH)
-        if _isValidFile(PATH):
+        if isValidFile(PATH):
             print(f"Removing file: {PATH}")
             PATH.unlink()
             print(f"Removed file")
 
-        elif _isValidDir(PATH):
-            numFil, numDir = _count_files_dirs(PATH)
+        elif isValidDir(PATH):
+            numFil, numDir = count_files_dirs(PATH)
             if IsRecursive:
                 print(f"Removing directory: {PATH}...")
-                if not _isEmptyDir(PATH):
+                if not isEmptyDir(PATH):
                     if not IsForced:
                         prompt = input(f"Deleting directory with: {numFil} files, {numDir} directories. Still continue? [Y/n]: ")
                         if prompt.lower() != "y":

@@ -1,9 +1,25 @@
 import argparse
 import os
 from pathlib import Path
+import json
+from commands import isValidDir
+
+CONFIG_PATH = Path(r"C:\Users\jackr\OneDrive\Desktop\C_Files\python\config.json")
 
 def get_cwd():
-    return Path(os.getcwd())
+    if CONFIG_PATH.exists():
+        try:
+            with CONFIG_PATH.open("r") as f:
+                data = json.load(f)
+                saved_path = Path(data.get("cwd", Path.cwd())).expanduser().resolve()
+                if isValidDir(saved_path):
+                    return saved_path
+                else:
+                    print(f"Saved cwd is invalid. Falling back to script directory")
+        except json.JSONDecodeError:
+            print(f"{CONFIG_PATH} json file is corrupted. resetting.")
+    else:
+        return Path.cwd()
 
 def argument_parser(parser):
     parser.add_argument("-v", "--verbose", action="store_true", help="Add verbosity to the program")
